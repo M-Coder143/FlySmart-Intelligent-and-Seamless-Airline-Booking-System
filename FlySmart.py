@@ -1,6 +1,6 @@
 from datetime import datetime
 
-# Mock Databases
+# Mock Database
 flight_database = []
 user_profiles = {}
 booking_history = []
