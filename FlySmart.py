@@ -10,8 +10,8 @@ booking_history = []
 def validate_credentials(email, password):
     return email in user_profiles and user_profiles[email]['password'] == password
 
-def create_user(name, email, password, role="customer"):
-    user_profiles[email] = {'name': name, 'password': password, 'role': role}
+def create_user(name, email, password):
+    user_profiles[email] = {'name': name, 'password': password}
 
 def get_user(email):
     return user_profiles.get(email)
@@ -38,13 +38,6 @@ def search_flights(departure, destination, date):
     ]
     return sorted(matching_flights, key=lambda x: datetime.strptime(x['date'], "%Y-%m-%d"))
 
-# Admin Features
-def all_bookings():
-    return booking_history
-
-def manage_flights():
-    print("Admin Flight Management Options (mock)")
-
 # Sample Data
 flight_database.append({'id': 'F001', 'from': 'NYC', 'to': 'LAX', 'date': '2025-05-01', 'seats': 10})
 flight_database.append({'id': 'F002', 'from': 'NYC', 'to': 'LAX', 'date': '2025-05-02', 'seats': 5})
@@ -60,7 +53,6 @@ flight_database.append({'id': 'F010', 'from': 'PAR', 'to': 'NYC', 'date': '2025-
 # Main App
 authenticated = False
 current_user_email = None
-user_role = None
 
 while not authenticated:
     print("\nWelcome to FlySmart!")
@@ -73,7 +65,6 @@ while not authenticated:
         if validate_credentials(email, password):
             authenticated = True
             current_user_email = email
-            user_role = get_user(email)['role']
             print("Login successful!")
         else:
             print("Invalid credentials.")
@@ -102,46 +93,51 @@ while not authenticated:
     else:
         print("Invalid choice.")
 
-# Main Menu
+# Main Menu for customers
 while authenticated:
-    print(f"\nWelcome {get_user(current_user_email)['name']} ({user_role})")
-    if user_role == "admin":
-        print("1. View All Bookings\n2. Manage Flights\n3. Log Out")
-        admin_choice = input("Choose an option: ")
-        if admin_choice == '1':
-            print(all_bookings())
-        elif admin_choice == '2':
-            manage_flights()
-        elif admin_choice == '3':
-            authenticated = False
-            print("Logged out.")
+    print(f"\nWelcome {get_user(current_user_email)['name']}")
+    print("1. Search Flights\n2. Smart Recommendations\n3. View Bookings\n4. Log Out")
+    user_choice = input("Choose an option: ")
+
+    if user_choice == '1':
+        print("\n--- Available Flights ---")
+        for flight in flight_database:
+            print(f"ID: {flight['id']} | From: {flight['from']} | To: {flight['to']} | Date: {flight['date']} | Seats: {flight['seats']}")
+
+        print("\n--- Search for a Flight ---")
+        from_city = input("From: ")
+        to_city = input("To: ")
+        date = input("Date (YYYY-MM-DD): ")
+        results = search_flights(from_city, to_city, date)
+
+        if results:
+            print("\nMatching Flights:")
+            for flight in results:
+                print(f"ID: {flight['id']} | From: {flight['from']} | To: {flight['to']} | Date: {flight['date']} | Seats: {flight['seats']}")
+            book = input("Book a flight? (yes/no): ")
+            if book.lower() == 'yes':
+                flight_id = input("Enter Flight ID: ")
+                passenger = input("Passenger Name: ")
+                print(book_flight(flight_id, passenger, current_user_email))
+            else:
+                print("Booking Cancelled.")
         else:
-            print("Invalid option.")
+            print("No matching flights found.")
+
+    elif user_choice == '2':
+        print("Recommendations:", generate_recommendations(current_user_email))
+
+    elif user_choice == '3':
+        bookings = fetch_bookings(current_user_email)
+        if bookings:
+            print("Your Bookings:")
+            for b in bookings:
+                print(f"Flight ID: {b['flight_id']} | Passenger: {b['passenger']}")
+        else:
+            print("You haven't booked yet. Book First.")
+
+    elif user_choice == '4':
+        authenticated = False
+        print("Logged out.")
     else:
-        print("1. Search Flights\n2. Smart Recommendations\n3. View Bookings\n4. Log Out")
-        user_choice = input("Choose an option: ")
-
-        if user_choice == '1':
-            from_city = input("From: ")
-            to_city = input("To: ")
-            date = input("Date (YYYY-MM-DD): ")
-            results = search_flights(from_city, to_city, date)
-            print("Flights:", results)
-            if results:
-                book = input("Book a flight? (yes/no): ")
-                if book.lower() == 'yes':
-                    flight_id = input("Enter Flight ID: ")
-                    passenger = input("Passenger Name: ")
-                    print(book_flight(flight_id, passenger, current_user_email))
-
-        elif user_choice == '2':
-            print("Recommendations:", generate_recommendations(current_user_email))
-
-        elif user_choice == '3':
-            print("Your Bookings:", fetch_bookings(current_user_email))
-
-        elif user_choice == '4':
-            authenticated = False
-            print("Logged out.")
-        else:
-            print("Invalid option.")
+        print("Invalid option.")
